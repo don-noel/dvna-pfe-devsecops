@@ -5,6 +5,9 @@
 # CORRECTION Trivy : node:18-slim réduit la surface d'attaque OS
 FROM node:18.20-slim
 
+# CORRECTION Trivy : mise à jour des packages OS pour corriger les CVEs Debian
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 COPY package*.json ./
