@@ -43,15 +43,6 @@ app.use(helmet({
 
 app.disable('x-powered-by');
 
-// Cache-Control — corrige Storable and Cacheable Content
-app.use((req, res, next) => {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
-  next();
-});
-
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(bodyParser.urlencoded({ extended: true }));
