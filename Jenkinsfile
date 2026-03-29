@@ -7,6 +7,16 @@ pipeline {
 
     stages {
 
+        stage('0 - Prepare') {
+            steps {
+                bat '''
+                    docker rm -f dvna-pfe-app 2>nul || exit 0
+                    docker network rm zap-network 2>nul || exit 0
+                    docker network create zap-network
+                '''
+            }
+        }
+
         stage('1 - Secrets Scanning (Gitleaks)') {
             steps {
                 echo '=== Scan des secrets hardcodes ==='
@@ -57,8 +67,6 @@ pipeline {
                 echo '=== Demarrage de l application pour ZAP ==='
                 bat '''
                     docker rm -f dvna-pfe-app 2>nul || exit 0
-                    docker network rm zap-network 2>nul || exit 0
-                    docker network create zap-network
                     docker run -d --name dvna-pfe-app --network zap-network dvna-pfe:pipeline
                     timeout /t 10 /nobreak
                 '''
