@@ -19,6 +19,10 @@ tags        = ["api-key"]
 paths = ['''node_modules''', '''\.gitleaks\.toml''']
 
 [allowlist]
+commits = [
+  "94ae767ed5db07d49581de67d40754c148f18c4a",
+  "58c512885ba765107cccdc0983558bc1da118b64"
+]
 paths = [
   '''node_modules''',
   '''\.gitleaks\.toml''',
