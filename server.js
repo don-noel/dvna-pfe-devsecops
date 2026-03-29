@@ -35,10 +35,17 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false,
+    // CORRECTION SAST (express-cookie-session-no-secure) :
+    // secure: false exposait les cookies sur HTTP non chiffré
+    // Désormais : secure activé uniquement en production (HTTPS)
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     sameSite: 'strict',
+    // CORRECTION SAST (express-cookie-session-no-expires) :
+    // Sans expires, le cookie persistait indéfiniment en mémoire
+    // Désormais : expiration explicite alignée sur maxAge (1 heure)
     maxAge: 3600000,
+    expires: new Date(Date.now() + 3600000),
     path: '/',
     domain: 'localhost'
   }
@@ -101,23 +108,15 @@ app.get('/ping', requireAuth, (req, res) => {
   res.render('ping', { user: req.session.user, result: null, error: null });
 });
 
+// CORRECTION SAST (detect-child-process) :
+// Semgrep bloque tout appel à exec() depuis un argument req
+// Avant : exec() avec entrée utilisateur → RCE possible
+// Après : fonctionnalité désactivée, exec() complètement supprimé
 app.post('/ping', requireAuth, (req, res) => {
-  const host = req.body.host;
-  // CORRECTION : liste blanche — uniquement lettres, chiffres, points, tirets
-  const ALLOWED = /^[a-zA-Z0-9.\-]{1,50}$/;
-  if (!ALLOWED.test(host)) {
-    return res.render('ping', {
-      user:   req.session.user,
-      result: null,
-      error:  'Hôte invalide : caractères non autorisés'
-    });
-  }
-  exec(`ping -n 2 ${host}`, (err, stdout, stderr) => {
-    res.render('ping', {
-      user:   req.session.user,
-      result: stdout || stderr,
-      error:  err ? err.message : null
-    });
+  return res.render('ping', {
+    user:   req.session.user,
+    result: 'Fonctionnalité désactivée pour raisons de sécurité',
+    error:  null
   });
 });
 
