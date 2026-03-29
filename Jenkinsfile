@@ -69,8 +69,8 @@ pipeline {
                     docker rm -f dvna-pfe-app 2>nul || exit 0
                     docker network create zap-network 2>nul || exit 0
                     docker run -d --name dvna-pfe-app --network zap-network dvna-pfe:pipeline
-                    ping -n 11 127.0.0.1 > nul
                 '''
+                sleep(time: 10, unit: 'SECONDS')
             }
         }
 
