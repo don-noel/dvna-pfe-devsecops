@@ -4,17 +4,49 @@ const express    = require('express');
 const session    = require('express-session');
 const bodyParser = require('body-parser');
 const path       = require('path');
-const { exec }   = require('child_process');
 const helmet     = require('helmet');
 
 const app = express();
 
-// ============================================================
-// VULN-1 (Gitleaks) : Secret JWT hardcodé en clair
-// CORRECTION : utilisation des variables d'environnement
-// ============================================================
 const JWT_SECRET    = process.env.JWT_SECRET    || 'changeme-in-prod';
 const ADMIN_API_KEY = process.env.ADMIN_API_KEY || 'changeme-in-prod';
+
+// ============================================================
+// CORRECTION ZAP : helmet() AVANT toutes les routes
+// ============================================================
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc:  ["'self'"],
+      styleSrc:   ["'self'", "https://fonts.googleapis.com"],
+      fontSrc:    ["'self'", "https://fonts.gstatic.com"],
+      imgSrc:     ["'self'", "data:"],
+      connectSrc: ["'self'"],
+      frameSrc:   ["'none'"],
+      objectSrc:  ["'none'"],
+    }
+  },
+  crossOriginEmbedderPolicy: true,
+  crossOriginOpenerPolicy:   { policy: "same-origin" },
+  crossOriginResourcePolicy: { policy: "same-origin" },
+  frameguard:                { action: 'deny' },
+  noSniff:                   true,
+  permittedCrossDomainPolicies: true,
+  referrerPolicy:            { policy: 'no-referrer' },
+  xssFilter:                 true,
+}));
+
+app.disable('x-powered-by');
+
+// Cache-Control — corrige Storable and Cacheable Content
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  next();
+});
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -23,8 +55,7 @@ app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ============================================================
-// VULN-2 (SAST) : Mauvaise configuration des cookies de session
-// CORRECTION : httpOnly, sameSite, maxAge, path, nom personnalisé
+// CORRECTION SAST : Cookies de session sécurisés
 // ============================================================
 app.use(session({
   secret: JWT_SECRET,
@@ -32,15 +63,9 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    // CORRECTION SAST (express-cookie-session-no-secure) :
-    // secure: true force l'envoi du cookie uniquement via HTTPS
-    // Protège contre l'interception du cookie sur des connexions non chiffrées
     secure: true,
     httpOnly: true,
     sameSite: 'strict',
-    // CORRECTION SAST (express-cookie-session-no-expires) :
-    // Sans expires, le cookie persistait indéfiniment en mémoire
-    // Désormais : expiration explicite alignée sur maxAge (1 heure)
     maxAge: 3600000,
     expires: new Date(Date.now() + 3600000),
     path: '/',
@@ -48,7 +73,24 @@ app.use(session({
   }
 }));
 
-// Base de données simulée en mémoire
+// CSRF token middleware
+const crypto = require('crypto');
+app.use((req, res, next) => {
+  if (!req.session.csrfToken) {
+    req.session.csrfToken = crypto.randomBytes(32).toString('hex');
+  }
+  res.locals.csrfToken = req.session.csrfToken;
+  next();
+});
+
+function verifyCsrf(req, res, next) {
+  const token = req.body._csrf || req.headers['x-csrf-token'];
+  if (!token || token !== req.session.csrfToken) {
+    return res.status(403).send('Invalid CSRF token');
+  }
+  next();
+}
+
 const users = [
   { id: 1, username: 'admin', password: 'admin123', role: 'admin' },
   { id: 2, username: 'alice', password: 'alice123', role: 'user'  },
@@ -65,7 +107,6 @@ function requireAuth(req, res, next) {
   next();
 }
 
-// ── Routes publiques ────────────────────────────────────────
 app.get('/', (req, res) => {
   res.render('index', { user: req.session.user || null });
 });
@@ -74,7 +115,7 @@ app.get('/login', (req, res) => {
   res.render('login', { error: null, user: null });
 });
 
-app.post('/login', (req, res) => {
+app.post('/login', verifyCsrf, (req, res) => {
   const { username, password } = req.body;
   const user = users.find(u => u.username === username && u.password === password);
   if (user) {
@@ -90,26 +131,15 @@ app.get('/logout', (req, res) => {
   res.redirect('/');
 });
 
-// ── Routes protégées ────────────────────────────────────────
 app.get('/dashboard', requireAuth, (req, res) => {
   res.render('dashboard', { user: req.session.user });
 });
 
-// ────────────────────────────────────────────────────────────
-// VULN-2 (SAST) : Command Injection
-// CORRECTION : validation de l'entrée utilisateur par liste blanche
-// Avant : exec() acceptait n'importe quelle entrée → RCE possible
-// Après : regex stricte sur l'hôte avant d'exécuter la commande
-// ────────────────────────────────────────────────────────────
 app.get('/ping', requireAuth, (req, res) => {
   res.render('ping', { user: req.session.user, result: null, error: null });
 });
 
-// CORRECTION SAST (detect-child-process) :
-// Semgrep bloque tout appel à exec() depuis un argument req
-// Avant : exec() avec entrée utilisateur → RCE possible
-// Après : fonctionnalité désactivée, exec() complètement supprimé
-app.post('/ping', requireAuth, (req, res) => {
+app.post('/ping', requireAuth, verifyCsrf, (req, res) => {
   return res.render('ping', {
     user:   req.session.user,
     result: 'Fonctionnalité désactivée pour raisons de sécurité',
@@ -117,18 +147,12 @@ app.post('/ping', requireAuth, (req, res) => {
   });
 });
 
-// ────────────────────────────────────────────────────────────
-// VULN-3 (DAST/ZAP) : XSS Réfléchi
-// ────────────────────────────────────────────────────────────
 app.get('/search', requireAuth, (req, res) => {
   const query  = req.query.q || '';
   const result = users.filter(u => u.username.includes(query));
   res.render('search', { user: req.session.user, query, result });
 });
 
-// ────────────────────────────────────────────────────────────
-// VULN-4 (DAST/ZAP) : IDOR
-// ────────────────────────────────────────────────────────────
 app.get('/notes', requireAuth, (req, res) => {
   const userNotes = notes.filter(n => n.userId === req.session.user.id);
   res.render('notes', { user: req.session.user, notes: userNotes });
@@ -140,20 +164,12 @@ app.get('/note/:id', requireAuth, (req, res) => {
   res.render('note', { user: req.session.user, note });
 });
 
-// ────────────────────────────────────────────────────────────
-// VULN-5 (SCA) : node-serialize CVE-2017-5941
-// CORRECTION SAST : remplacement de serialize.unserialize() par JSON.parse()
-// Avant : unserialize() permettait l'exécution de code arbitraire (RCE)
-// Après : JSON.parse() traite uniquement des données JSON sans exécution
-// Note : le package node-serialize sera supprimé dans fix/sca
-// ────────────────────────────────────────────────────────────
 app.get('/deserialize', requireAuth, (req, res) => {
   res.render('deserialize', { user: req.session.user, result: null });
 });
 
-app.post('/deserialize', requireAuth, (req, res) => {
+app.post('/deserialize', requireAuth, verifyCsrf, (req, res) => {
   try {
-    // CORRECTION : JSON.parse() au lieu de serialize.unserialize()
     const data = JSON.parse(req.body.payload);
     res.render('deserialize', { user: req.session.user, result: JSON.stringify(data) });
   } catch (e) {
@@ -161,14 +177,11 @@ app.post('/deserialize', requireAuth, (req, res) => {
   }
 });
 
-// ────────────────────────────────────────────────────────────
-// VULN-6 (SAST) : XXE
-// ────────────────────────────────────────────────────────────
 app.get('/xml', requireAuth, (req, res) => {
   res.render('xml', { user: req.session.user, result: null });
 });
 
-app.post('/xml', requireAuth, (req, res) => {
+app.post('/xml', requireAuth, verifyCsrf, (req, res) => {
   try {
     const { XMLParser } = require('fast-xml-parser');
     const parser = new XMLParser();
@@ -180,18 +193,9 @@ app.post('/xml', requireAuth, (req, res) => {
   }
 });
 
-// ────────────────────────────────────────────────────────────
-// CORRECTION ZAP : En-têtes de sécurité HTTP
-// helmet() ajoute automatiquement les headers de sécurité
-// app.disable supprime X-Powered-By qui expose la technologie
-// ────────────────────────────────────────────────────────────
-app.use(helmet());
-app.disable('x-powered-by');
-
 const PORT = process.env.PORT || 9090;
 app.listen(PORT, () => {
   console.log(`DVNA-PFE demarre sur http://localhost:${PORT}`);
-  console.log(`Corrections SAST appliquees : Command Injection, Deserialisation, Cookies`);
 });
 
 module.exports = app;
