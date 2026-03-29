@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        APP_URL = "http://localhost:9090"
+        APP_URL = "http://dvna-pfe-app:9090"
     }
 
     stages {
@@ -57,8 +57,10 @@ pipeline {
                 echo '=== Demarrage de l application pour ZAP ==='
                 bat '''
                     docker rm -f dvna-pfe-app 2>nul || exit 0
-                    docker network create zap-network 2>nul || exit 0
-                    docker run -d --name dvna-pfe-app --network zap-network -p 9090:9090 dvna-pfe:pipeline
+                    docker network rm zap-network 2>nul || exit 0
+                    docker network create zap-network
+                    docker run -d --name dvna-pfe-app --network zap-network dvna-pfe:pipeline
+                    timeout /t 10 /nobreak
                 '''
             }
         }
