@@ -27,6 +27,7 @@
     </div>
 
     <form method="POST" action="/deserialize">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="form-group">
         <label>Payload JSON a deserialiser</label>
         <textarea name="payload" rows="4" placeholder='{"username":"alice","role":"user"}'></textarea>
