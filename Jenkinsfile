@@ -67,8 +67,9 @@ pipeline {
                 echo '=== Demarrage de l application pour ZAP ==='
                 bat '''
                     docker rm -f dvna-pfe-app 2>nul || exit 0
+                    docker network create zap-network 2>nul || exit 0
                     docker run -d --name dvna-pfe-app --network zap-network dvna-pfe:pipeline
-                    timeout /t 10 /nobreak
+                    ping -n 11 127.0.0.1 > nul
                 '''
             }
         }
