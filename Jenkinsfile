@@ -57,8 +57,8 @@ pipeline {
                 echo '=== Demarrage de l application pour ZAP ==='
                 bat '''
                     docker rm -f dvna-pfe-app 2>nul || exit 0
-                    docker run -d --name dvna-pfe-app -p 9090:9090 dvna-pfe:pipeline
-                    docker inspect -f "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" dvna-pfe-app
+                    docker network create zap-network 2>nul || exit 0
+                    docker run -d --name dvna-pfe-app --network zap-network -p 9090:9090 dvna-pfe:pipeline
                 '''
             }
         }
@@ -68,8 +68,7 @@ pipeline {
                 echo '=== Test dynamique de l application ==='
                 bat '''
                     if not exist zap-report mkdir zap-report
-                    for /f %%i in ('docker inspect -f "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" dvna-pfe-app') do set APP_IP=%%i
-                    docker run --rm -v "%CD%\\zap-report:/zap/wrk" ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://host.docker.internal:9090 -r zap-pipeline.html -I
+                    docker run --rm --network zap-network -v "%CD%\\zap-report:/zap/wrk" ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://dvna-pfe-app:9090 -r zap-pipeline.html -I
                 '''
             }
         }
@@ -79,6 +78,7 @@ pipeline {
         always {
             echo '=== Pipeline DevSecOps termine ==='
             bat 'docker rm -f dvna-pfe-app 2>nul || exit 0'
+            bat 'docker network rm zap-network 2>nul || exit 0'
         }
         success {
             echo '=== Tous les scans executes avec succes ==='
