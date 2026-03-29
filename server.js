@@ -43,6 +43,12 @@ app.use(helmet({
 
 app.disable('x-powered-by');
 
+// CORRECTION ZAP : Permissions-Policy header
+app.use((req, res, next) => {
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  next();
+});
+
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(bodyParser.urlencoded({ extended: true }));
