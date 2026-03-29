@@ -67,7 +67,7 @@ pipeline {
                 echo '=== Test dynamique de l application ==='
                 bat '''
                     if not exist zap-report mkdir zap-report
-                    docker run --rm --add-host=host.docker.internal:host-gateway -v "%CD%\\zap-report:/zap/wrk" ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://host.docker.internal:9090 -r zap-pipeline.html
+                    docker run --rm --add-host=host.docker.internal:host-gateway -v "%CD%\\zap-report:/zap/wrk" ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://host.docker.internal:9090 -r zap-pipeline.html -I
                 '''
             }
         }
