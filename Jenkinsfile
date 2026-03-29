@@ -58,6 +58,7 @@ pipeline {
                 bat '''
                     docker rm -f dvna-pfe-app 2>nul || exit 0
                     docker run -d --name dvna-pfe-app -p 9090:9090 dvna-pfe:pipeline
+                    docker inspect -f "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" dvna-pfe-app
                 '''
             }
         }
@@ -67,7 +68,8 @@ pipeline {
                 echo '=== Test dynamique de l application ==='
                 bat '''
                     if not exist zap-report mkdir zap-report
-                    docker run --rm --network host -v "%CD%\\zap-report:/zap/wrk" ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://172.17.0.1:9090 -r zap-pipeline.html -I
+                    for /f %%i in ('docker inspect -f "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" dvna-pfe-app') do set APP_IP=%%i
+                    docker run --rm -v "%CD%\\zap-report:/zap/wrk" ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://host.docker.internal:9090 -r zap-pipeline.html -I
                 '''
             }
         }
