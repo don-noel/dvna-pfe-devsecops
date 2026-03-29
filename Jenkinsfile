@@ -28,6 +28,7 @@ pipeline {
         stage('3 - SCA (npm audit)') {
             steps {
                 echo '=== Analyse des dependances ==='
+                bat 'npm install'
                 bat 'npm audit --audit-level=critical'
             }
         }
