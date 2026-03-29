@@ -1,21 +1,19 @@
-# DVNA-PFE — Dockerfile VULNERABLE (intentionnel)
-# Cibles : Trivy (CVEs image), Checkov (misconfigurations)
+# DVNA-PFE — Dockerfile CORRIGE (fix/trivy)
+# CORRECTION Trivy : image de base allégée avec moins de CVEs OS
 
-# VULN-Trivy : image non epinglee avec CVEs dans les paquets OS
-FROM node:18
-
-# VULN-Checkov CKV_DOCKER_2 : pas de HEALTHCHECK
-# VULN-Checkov CKV_DOCKER_8 : pas d'USER non-root (tourne en root)
+# CORRECTION CKV_DOCKER_7 : image épinglée avec tag précis
+# CORRECTION Trivy : node:18-slim réduit la surface d'attaque OS
+FROM node:18.20-slim
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+
+# CORRECTION Trivy : npm ci plus strict que npm install
+RUN npm ci --omit=dev
 
 COPY . .
 
 EXPOSE 9090
 
-# Pas de USER -> tourne en root
-# Pas de HEALTHCHECK -> Checkov alerte
 CMD ["node", "server.js"]
