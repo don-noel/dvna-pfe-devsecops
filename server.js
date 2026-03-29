@@ -36,9 +36,9 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     // CORRECTION SAST (express-cookie-session-no-secure) :
-    // secure: false exposait les cookies sur HTTP non chiffré
-    // Désormais : secure activé uniquement en production (HTTPS)
-    secure: process.env.NODE_ENV === 'production',
+    // secure: true force l'envoi du cookie uniquement via HTTPS
+    // Protège contre l'interception du cookie sur des connexions non chiffrées
+    secure: true,
     httpOnly: true,
     sameSite: 'strict',
     // CORRECTION SAST (express-cookie-session-no-expires) :
