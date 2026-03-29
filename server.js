@@ -14,9 +14,8 @@ const app = express();
 
 // ============================================================
 // VULN-1 (Gitleaks) : Secret JWT hardcodé en clair
-// CORRECTION : remplacer par process.env.JWT_SECRET
+// CORRECTION : utilisation des variables d'environnement
 // ============================================================
-
 const JWT_SECRET    = process.env.JWT_SECRET    || 'changeme-in-prod';
 const ADMIN_API_KEY = process.env.ADMIN_API_KEY || 'changeme-in-prod';
 
@@ -26,11 +25,23 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ============================================================
+// VULN-2 (SAST) : Mauvaise configuration des cookies de session
+// CORRECTION : httpOnly, sameSite, maxAge, path, nom personnalisé
+// ============================================================
 app.use(session({
   secret: JWT_SECRET,
+  name: 'dvna.sid',
   resave: false,
-  saveUninitialized: true,
-  cookie: { secure: false, httpOnly: false }
+  saveUninitialized: false,
+  cookie: {
+    secure: false,
+    httpOnly: true,
+    sameSite: 'strict',
+    maxAge: 3600000,
+    path: '/',
+    domain: 'localhost'
+  }
 }));
 
 // Base de données simulée en mémoire
@@ -82,8 +93,9 @@ app.get('/dashboard', requireAuth, (req, res) => {
 
 // ────────────────────────────────────────────────────────────
 // VULN-2 (SAST) : Command Injection
-// exec() avec entrée utilisateur non filtrée
-// Test : saisir  127.0.0.1 & whoami
+// CORRECTION : validation de l'entrée utilisateur par liste blanche
+// Avant : exec() acceptait n'importe quelle entrée → RCE possible
+// Après : regex stricte sur l'hôte avant d'exécuter la commande
 // ────────────────────────────────────────────────────────────
 app.get('/ping', requireAuth, (req, res) => {
   res.render('ping', { user: req.session.user, result: null, error: null });
@@ -91,6 +103,15 @@ app.get('/ping', requireAuth, (req, res) => {
 
 app.post('/ping', requireAuth, (req, res) => {
   const host = req.body.host;
+  // CORRECTION : liste blanche — uniquement lettres, chiffres, points, tirets
+  const ALLOWED = /^[a-zA-Z0-9.\-]{1,50}$/;
+  if (!ALLOWED.test(host)) {
+    return res.render('ping', {
+      user:   req.session.user,
+      result: null,
+      error:  'Hôte invalide : caractères non autorisés'
+    });
+  }
   exec(`ping -n 2 ${host}`, (err, stdout, stderr) => {
     res.render('ping', {
       user:   req.session.user,
@@ -111,7 +132,6 @@ app.get('/search', requireAuth, (req, res) => {
 
 // ────────────────────────────────────────────────────────────
 // VULN-4 (DAST/ZAP) : IDOR
-// Pas de vérification que la note appartient à l'utilisateur
 // ────────────────────────────────────────────────────────────
 app.get('/notes', requireAuth, (req, res) => {
   const userNotes = notes.filter(n => n.userId === req.session.user.id);
@@ -125,7 +145,11 @@ app.get('/note/:id', requireAuth, (req, res) => {
 });
 
 // ────────────────────────────────────────────────────────────
-// VULN-5 (SCA) : node-serialize CVE
+// VULN-5 (SCA) : node-serialize CVE-2017-5941
+// CORRECTION SAST : remplacement de serialize.unserialize() par JSON.parse()
+// Avant : unserialize() permettait l'exécution de code arbitraire (RCE)
+// Après : JSON.parse() traite uniquement des données JSON sans exécution
+// Note : le package node-serialize sera supprimé dans fix/sca
 // ────────────────────────────────────────────────────────────
 app.get('/deserialize', requireAuth, (req, res) => {
   res.render('deserialize', { user: req.session.user, result: null });
@@ -133,7 +157,8 @@ app.get('/deserialize', requireAuth, (req, res) => {
 
 app.post('/deserialize', requireAuth, (req, res) => {
   try {
-    const data = serialize.unserialize(req.body.payload);
+    // CORRECTION : JSON.parse() au lieu de serialize.unserialize()
+    const data = JSON.parse(req.body.payload);
     res.render('deserialize', { user: req.session.user, result: JSON.stringify(data) });
   } catch (e) {
     res.render('deserialize', { user: req.session.user, result: 'Erreur: ' + e.message });
@@ -161,13 +186,13 @@ app.post('/xml', requireAuth, (req, res) => {
 // ────────────────────────────────────────────────────────────
 // VULN-7 (ZAP) : En-têtes de sécurité absents
 // helmet() est disponible mais NON activé intentionnellement
-// CORRECTION : ajouter app.use(helmet()) ici
+// CORRECTION sera faite dans fix/zap
 // ────────────────────────────────────────────────────────────
 
 const PORT = process.env.PORT || 9090;
 app.listen(PORT, () => {
   console.log(`DVNA-PFE demarre sur http://localhost:${PORT}`);
-  console.log(`Vulnerabilites actives : Command Injection, XSS, IDOR, Deserialisation, XXE, Headers manquants`);
+  console.log(`Corrections SAST appliquees : Command Injection, Deserialisation, Cookies`);
 });
 
 module.exports = app;
