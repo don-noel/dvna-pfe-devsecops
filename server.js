@@ -183,10 +183,12 @@ app.post('/xml', requireAuth, (req, res) => {
 });
 
 // ────────────────────────────────────────────────────────────
-// VULN-7 (ZAP) : En-têtes de sécurité absents
-// helmet() est disponible mais NON activé intentionnellement
-// CORRECTION sera faite dans fix/zap
+// CORRECTION ZAP : En-têtes de sécurité HTTP
+// helmet() ajoute automatiquement les headers de sécurité
+// app.disable supprime X-Powered-By qui expose la technologie
 // ────────────────────────────────────────────────────────────
+app.use(helmet());
+app.disable('x-powered-by');
 
 const PORT = process.env.PORT || 9090;
 app.listen(PORT, () => {
