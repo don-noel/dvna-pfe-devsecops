@@ -23,6 +23,7 @@
 
     <div class="card">
       <form method="POST" action="/login">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <div class="form-group">
           <label>Nom d'utilisateur</label>
           <input type="text" name="username" placeholder="admin" autocomplete="off">
