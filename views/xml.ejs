@@ -27,6 +27,7 @@
     </div>
 
     <form method="POST" action="/xml">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="form-group">
         <label>Document XML</label>
         <textarea name="xml" rows="6" placeholder="<root><value>test</value></root>"></textarea>
