@@ -11,7 +11,7 @@ pipeline {
             steps {
                 echo '=== Scan des secrets hardcodes ==='
                 bat '''
-                    D:\\DevSecOps\\tools\\gitleaks\\gitleaks.exe detect --source . --config .gitleaks.toml -v || exit 0
+                    D:\\DevSecOps\\tools\\gitleaks\\gitleaks.exe detect --source . --config .gitleaks.toml -v
                 '''
             }
         }
