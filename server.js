@@ -5,8 +5,6 @@ const session    = require('express-session');
 const bodyParser = require('body-parser');
 const path       = require('path');
 const { exec }   = require('child_process');
-const xmldom     = require('xmldom');
-const xpath      = require('xpath');
 const helmet     = require('helmet');
 
 const app = express();
@@ -172,9 +170,10 @@ app.get('/xml', requireAuth, (req, res) => {
 
 app.post('/xml', requireAuth, (req, res) => {
   try {
-    const DOMParser = xmldom.DOMParser;
-    const doc       = new DOMParser().parseFromString(req.body.xml, 'text/xml');
-    const value     = xpath.select('string(//value)', doc);
+    const { XMLParser } = require('fast-xml-parser');
+    const parser = new XMLParser();
+    const doc = parser.parse(req.body.xml);
+    const value = doc?.root?.value || JSON.stringify(doc);
     res.render('xml', { user: req.session.user, result: value });
   } catch (e) {
     res.render('xml', { user: req.session.user, result: 'Erreur XML' });
