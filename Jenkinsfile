@@ -20,7 +20,7 @@ pipeline {
             steps {
                 echo '=== Analyse statique du code ==='
                 bat '''
-                    docker run --rm -v "%CD%:/src" returntocorp/semgrep semgrep --config=p/nodejs --config=p/security-audit /src/server.js --text --no-color || exit 0
+                    docker run --rm -e SEMGREP_FORCE_COLOR=0 -v "%CD%:/src" returntocorp/semgrep semgrep --config=p/nodejs --config=p/security-audit /src/server.js || exit 0
                 '''
             }
         }
