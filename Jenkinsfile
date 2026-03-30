@@ -20,8 +20,21 @@ pipeline {
             steps {
                 echo '=== Analyse statique du code ==='
                 bat '''
-                    docker run --rm -e SEMGREP_FORCE_COLOR=0 -v "%CD%:/src" returntocorp/semgrep semgrep --config=p/nodejs --config=p/security-audit /src/server.js || exit 0
+                    if not exist semgrep-report mkdir semgrep-report
+                    docker run --rm -v "%CD%:/src" returntocorp/semgrep semgrep --config=p/nodejs --config=p/security-audit /src/server.js --output /src/semgrep-report/semgrep-report.html --html || exit 0
                 '''
+            }
+            post {
+                always {
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'semgrep-report',
+                        reportFiles: 'semgrep-report.html',
+                        reportName: 'Semgrep SAST Report'
+                    ])
+                }
             }
         }
 
