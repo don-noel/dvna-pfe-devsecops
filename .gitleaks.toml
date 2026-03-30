@@ -1,22 +1,22 @@
 title = "DVNA-PFE Gitleaks Config"
 
 [[rules]]
-id          = "jwt-secret-hardcoded"
-description = "Cle JWT hardcodee dans le code"
-regex       = '''(?i)(jwt_secret|JWT_SECRET)\s*=\s*["'][^"']{8,}["']'''
-severity    = "CRITICAL"
-tags        = ["jwt", "secret"]
-[rules.allowlist]
-paths = ['''node_modules''', '''\.gitleaks\.toml''']
+  id          = "jwt-secret-hardcoded"
+  description = "Cle JWT hardcodee dans le code"
+  regex       = '''(?i)(jwt_secret|JWT_SECRET)\s*=\s*["'][^"']{8,}["']'''
+  severity    = "CRITICAL"
+  tags        = ["jwt", "secret"]
+  [rules.allowlist]
+  paths = ['''node_modules''', '''\.gitleaks\.toml''']
 
 [[rules]]
-id          = "api-key-hardcoded"
-description = "Cle API hardcodee dans le code"
-regex       = '''(?i)(api_key|ADMIN_API_KEY)\s*=\s*["']sk-[a-zA-Z0-9\-]{10,}["']'''
-severity    = "HIGH"
-tags        = ["api-key"]
-[rules.allowlist]
-paths = ['''node_modules''', '''\.gitleaks\.toml''']
+  id          = "api-key-hardcoded"
+  description = "Cle API hardcodee dans le code"
+  regex       = '''(?i)(api_key|ADMIN_API_KEY)\s*=\s*["']sk-[a-zA-Z0-9\-]{10,}["']'''
+  severity    = "HIGH"
+  tags        = ["api-key"]
+  [rules.allowlist]
+  paths = ['''node_modules''', '''\.gitleaks\.toml''']
 
 [allowlist]
   paths = [
@@ -26,4 +26,8 @@ paths = ['''node_modules''', '''\.gitleaks\.toml''']
     '''package-lock\.json''',
     '''readme_principal\.md''',
     '''README\.md'''
+  ]
+  commits = [
+    "94ae767ed5db07d49581de67d40754c148f18c4a",
+    "58c512885ba765107cccdc0983558bc1da118b64"
   ]
