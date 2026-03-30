@@ -21,7 +21,7 @@ pipeline {
                 echo '=== Analyse statique du code ==='
                 bat '''
                     if not exist semgrep-report mkdir semgrep-report
-                    docker run --rm -v "%CD%:/src" returntocorp/semgrep semgrep --config=p/nodejs --config=p/security-audit /src/server.js --json --output /src/semgrep-report/semgrep-report.json || exit 0
+                    docker run --rm -v "%CD%:/src" returntocorp/semgrep semgrep --config=p/nodejs --config=p/security-audit /src/server.js --output /src/semgrep-report/semgrep-report.txt || exit 0
                 '''
             }
             post {
@@ -31,12 +31,13 @@ pipeline {
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
                         reportDir: 'semgrep-report',
-                        reportFiles: 'semgrep-report.json',
+                        reportFiles: 'semgrep-report.txt',
                         reportName: 'Semgrep SAST Report'
                     ])
                 }
             }
         }
+        
         stage('3 - SCA (npm audit)') {
             steps {
                 echo '=== Analyse des dependances ==='
