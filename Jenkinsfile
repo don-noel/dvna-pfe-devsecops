@@ -7,15 +7,7 @@ pipeline {
 
     stages {
 
-        stage('0 - Prepare') {
-            steps {
-                bat '''
-                    docker rm -f dvna-pfe-app 2>nul || exit 0
-                    docker network rm zap-network 2>nul || exit 0
-                    docker network create zap-network
-                '''
-            }
-        }
+        
 
         stage('1 - Secrets Scanning (Gitleaks)') {
             steps {
