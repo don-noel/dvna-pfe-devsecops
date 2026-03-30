@@ -38,12 +38,12 @@ pipeline {
             steps {
                 echo '=== Scan de l image Docker ==='
                 bat '''
-                    if not exist trivy-report mkdir trivy-report
                     docker build -t dvna-pfe:pipeline .
-                    docker run --rm -v //var/run/docker.sock://var/run/docker.sock -v "%CD%\\trivy-report:/trivy-report" ghcr.io/aquasecurity/trivy:latest image --severity HIGH,CRITICAL --format template --template "@contrib/html.tpl" --output /trivy-report/trivy-report.html dvna-pfe:pipeline || exit 0
+                    docker run --rm -v //var/run/docker.sock://var/run/docker.sock ghcr.io/aquasecurity/trivy:latest image --severity HIGH,CRITICAL dvna-pfe:pipeline || exit 0
                 '''
             }
         }
+
 
         stage('5 - IaC Security (Checkov)') {
             steps {
