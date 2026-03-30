@@ -38,20 +38,8 @@ pipeline {
             steps {
                 echo '=== Scan de l image Docker ==='
                 bat '''
-                docker pull ghcr.io/aquasecurity/trivy:latest
-                
-                docker build -t dvna-pfe:pipeline .
-                
-                docker run --rm ^
-                  -v /var/run/docker.sock:/var/run/docker.sock ^
-                  -v %cd%:/work ^
-                  -w /work ^
-                  ghcr.io/aquasecurity/trivy:latest image ^
-                  --severity HIGH,CRITICAL ^
-                  --format template ^
-                  --template "@contrib/html.tpl" ^
-                  -o /work/trivy-report.html ^
-                  dvna-pfe:pipeline || exit 0
+                    docker build -t dvna-pfe:pipeline .
+                    docker run --rm -v //var/run/docker.sock://var/run/docker.sock ghcr.io/aquasecurity/trivy:latest image --severity HIGH,CRITICAL dvna-pfe:pipeline || exit 0
                 '''
             }
         }
