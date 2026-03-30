@@ -28,6 +28,7 @@ paths = [
   '''\.gitleaks\.toml''',
   '''gitleaks\.exe''',
   '''readme_principal\.md''',
+  '''readonfix\.md''',
   '''readmeiixsast\.md''',
   '''package-lock\.json'''
 ]
