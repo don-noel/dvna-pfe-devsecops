@@ -30,7 +30,7 @@ paths = [
   '''readme_principal\.md''',
   '''Readme_fix_sast\.md''',
   '''Readme_fix_trivy\.md''',
-  '''Readme_fix_trivy\.md''',
+  '''Readme_fix_checkov\.md''',
   '''Readme_fix_sca\.md''',
   '''Readme_fix_gitleaks\.md''',
   '''package-lock\.json'''
