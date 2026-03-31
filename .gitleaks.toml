@@ -27,6 +27,7 @@ paths = [
   '''node_modules''',
   '''\.gitleaks\.toml''',
   '''gitleaks\.exe''',
+  '''Readme_fix_gitleaks\.md''',
   '''readme_principal\.md''',
   '''package-lock\.json'''
 ]
