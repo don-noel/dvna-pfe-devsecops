@@ -70,7 +70,7 @@ pipeline {
             steps {
                 echo '=== Scan de l image Docker ==='
                 bat '''
-                    docker build -t dvna-pfe:pipeline .
+                    docker build --no-cache -t dvna-pfe:pipeline .
                     if not exist trivy-report mkdir trivy-report
                     docker run --rm -v //var/run/docker.sock://var/run/docker.sock -v "%CD%/trivy-report:/report" ghcr.io/aquasecurity/trivy:latest image --severity HIGH,CRITICAL --format table --no-progress --exit-code 1 --ignore-unfixed --skip-dirs /usr/local/lib/node_modules --skip-dirs /opt --output /report/trivy-report.txt dvna-pfe:pipeline 2>nul
                 '''
