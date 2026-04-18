@@ -129,6 +129,7 @@ pipeline {
                     docker rm -f dvna-pfe-app 2>nul || exit 0
                     docker run -d --name dvna-pfe-app -p 9090:9090 dvna-pfe:pipeline
                 '''
+                sleep(time: 15, unit: 'SECONDS')
             }
         }
 
