@@ -23,7 +23,7 @@ pipeline {
                         $content = Get-Content -Path "gitleaks-report/gitleaks-report.txt" -Encoding UTF8 -Raw
                         Write-Output $content
                     ''').trim()
-                    def status = content.contains('leaks found') && !content.contains('leaks found: 0') ? 'warning' : 'success'
+                    def status = content.contains('leaks found') && !content.contains('leaks found: 0') && !content.contains('no leaks found') ? 'warning' : 'success'
                     sendToDashboard("Gitleaks", content, status)
                     if (status == 'warning') {
                         error("Gitleaks a detecte des secrets — pipeline bloque !")
