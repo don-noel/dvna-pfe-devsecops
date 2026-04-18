@@ -5,7 +5,6 @@ const session    = require('express-session');
 const bodyParser = require('body-parser');
 const path       = require('path');
 const { exec }   = require('child_process');
-const serialize  = require('node-serialize');
 const xmldom     = require('xmldom');
 const xpath      = require('xpath');
 const helmet     = require('helmet');
