@@ -147,7 +147,7 @@ pipeline {
                         $content = Get-Content -Path "zap-report/zap-console-report.txt" -Encoding UTF8 -Raw
                         Write-Output $content
                     ''').trim().replaceAll(/\x1B\[[0-9;]*m/, '').replaceAll(/\[\d+m/, '')
-                    def status = content.contains('WARN-NEW') ? 'warning' : 'success'
+                    def status = (content.contains('WARN-NEW') && !content.contains('WARN-NEW: 0')) ? 'warning' : 'success'
                     sendToDashboard("OWASP ZAP", content, status)
                     if (status == 'warning') {
                         error("OWASP ZAP a detecte des vulnerabilites — pipeline bloque !")
