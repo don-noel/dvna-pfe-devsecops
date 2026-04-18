@@ -13,7 +13,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # CORRECTION Trivy : npm ci plus strict que npm install
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 
 COPY . .
 
