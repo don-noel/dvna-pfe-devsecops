@@ -65,6 +65,7 @@ pipeline {
                         npm install 2>nul || exit 0
                         copy package-lock.json sca-report\\package-lock.json 2>nul || exit 0
                         npm audit --audit-level=critical > sca-report\\npm-audit-report.txt 2>&1 || exit 0
+                        if not exist sca-report\\npm-audit-report.txt echo No vulnerabilities found > sca-report\\npm-audit-report.txt
                     '''
                     def content = powershell(encoding: 'UTF-8', returnStdout: true, script: '''
                         [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
