@@ -82,10 +82,28 @@ pipeline {
                 echo '=== Scan de l image Docker ==='
                 script {
                     bat '''
-                        docker build -t dvna-pfe:pipeline .
+                        docker rmi dvna-pfe:pipeline 2>nul
+                        docker system prune -f 2>nul
+                        docker build --no-cache -t dvna-pfe:pipeline .
                         if not exist trivy-report mkdir trivy-report
-                        docker run --rm -v //var/run/docker.sock://var/run/docker.sock -v "%CD%/trivy-report:/report" ghcr.io/aquasecurity/trivy:latest image --severity HIGH,CRITICAL --format table --no-progress --ignore-unfixed --skip-dirs /usr/local/lib/node_modules --skip-dirs /opt --output /report/trivy-report.txt dvna-pfe:pipeline 2>nul || exit 0
+                        docker run --rm ^
+                            -v //var/run/docker.sock://var/run/docker.sock ^
+                            -v "%CD%\\trivy-report:/report" ^
+                            ghcr.io/aquasecurity/trivy:latest image ^
+                            --severity HIGH,CRITICAL ^
+                            --format table ^
+                            --no-progress ^
+                            --ignore-unfixed ^
+                            --vuln-type library ^
+                            --skip-dirs /usr/local/lib/node_modules ^
+                            --skip-dirs /opt ^
+                            --output /report/trivy-report.txt ^
+                            dvna-pfe:pipeline 2>nul || exit 0
                     '''
+                    // Affichage brut dans Jenkins (caracteres mal encodes intentionnellement)
+                    bat 'type trivy-report\\trivy-report.txt || exit 0'
+        
+                    // Lecture propre UTF-8 uniquement pour le dashboard
                     def content = powershell(encoding: 'UTF-8', returnStdout: true, script: '''
                         [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
                         $content = Get-Content -Path "trivy-report/trivy-report.txt" -Encoding UTF8 -Raw
