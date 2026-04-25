@@ -90,6 +90,7 @@ pipeline {
                         docker system prune -f 2>nul
                         docker build --no-cache -t dvna-pfe:pipeline .
                         if not exist trivy-report mkdir trivy-report
+                        del /f trivy-report\\trivy-report.txt 2>nul || exit 0
                         docker run --rm ^
                             -v //var/run/docker.sock://var/run/docker.sock ^
                             -v "%CD%\\trivy-report:/report" ^
