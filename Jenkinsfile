@@ -72,9 +72,11 @@ pipeline {
                         del /f sca-report\\npm-audit-report.txt 2>nul || exit 0
                         npm install 2>nul || exit 0
                         copy package-lock.json sca-report\\package-lock.json 2>nul || exit 0
-                        npm audit --audit-level=critical > sca-report\\npm-audit-report.txt 2>&1 || exit 0
-                        if not exist sca-report\\npm-audit-report.txt echo No vulnerabilities found > sca-report\\npm-audit-report.txt
-                    '''                   // Affichage brut dans Jenkins (caracteres mal encodes intentionnellement)
+                        npm audit --audit-level=critical > sca-report\\npm-audit-report.txt 2>&1
+                        if not exist sca-report\\npm-audit-report.txt (
+                            echo No vulnerabilities found > sca-report\\npm-audit-report.txt
+                        )
+                    '''               // Affichage brut dans Jenkins (caracteres mal encodes intentionnellement)
                     bat 'type sca-report\\npm-audit-report.txt || exit 0'
 
                     // Lecture propre UTF-8 uniquement pour le dashboard
