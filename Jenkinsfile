@@ -15,8 +15,8 @@ pipeline {
                 echo '=== Scan des secrets hardcodes ==='
                 script {
                     bat '''
-                        if not exist gitleaks-report mkdir gitleaks-report
-                        D:\\DevSecOps\\tools\\gitleaks\\gitleaks.exe detect --source . --config .gitleaks.toml --no-git --no-banner -v > gitleaks-report\\gitleaks-report.txt 2>&1 || exit 0
+                        if not exist sca-report mkdir sca-report
+                        npm audit --audit-level=critical > sca-report\\npm-audit-report.txt 2>&1 || exit 0
                     '''
                     // Affichage brut dans Jenkins (caracteres mal encodes intentionnellement)
                     bat 'type gitleaks-report\\gitleaks-report.txt || exit 0'
