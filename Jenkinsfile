@@ -63,6 +63,7 @@ pipeline {
                     bat '''
                         if not exist sca-report mkdir sca-report
                         npm install 2>nul || exit 0
+                        copy package-lock.json sca-report\\package-lock.json 2>nul || exit 0
                         npm audit --audit-level=critical > sca-report\\npm-audit-report.txt 2>&1 || exit 0
                     '''
                     // Affichage brut dans Jenkins (caracteres mal encodes intentionnellement)
