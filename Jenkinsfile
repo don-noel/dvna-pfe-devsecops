@@ -122,6 +122,9 @@ pipeline {
                     if not exist checkov-report mkdir checkov-report
                     docker run --rm -v "%CD%:/workspace" bridgecrew/checkov:2.3.0 -f /workspace/Dockerfile --framework dockerfile > checkov-report\\checkov-report.txt 2>&1 || exit 0
                 '''
+                // Affichage brut dans Jenkins (caracteres mal encodes intentionnellement)
+                bat 'type checkov-report\\checkov-report.txt || exit 0'
+        
                 script {
                     def content = powershell(encoding: 'UTF-8', returnStdout: true, script: '''
                         [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
