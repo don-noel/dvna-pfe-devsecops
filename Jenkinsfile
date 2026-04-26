@@ -132,8 +132,8 @@ pipeline {
                         $content = Get-Content -Path "checkov-report/checkov-report.txt" -Encoding UTF8 -Raw
                         Write-Output $content
                     ''').trim()
-                    def failedMatch = (content =~ /Failed checks:\s*(\d+)/)
-                    def failedCount = failedMatch ? failedMatch[0][1].toInteger() : 0
+                    def matcher = content =~ /Failed checks:\s*(\d+)/
+                    def failedCount = matcher.find() ? matcher.group(1).toInteger() : 0
                     def status = failedCount > 0 ? 'warning' : 'success'
                     sendToDashboard("Checkov", content, status)
                 }
