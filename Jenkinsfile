@@ -143,19 +143,12 @@ pipeline {
                         if not exist checkov-report mkdir checkov-report
                         docker run --rm -v "%CD%:/workspace" bridgecrew/checkov:2.3.0 -f /workspace/Dockerfile --framework dockerfile > checkov-report\\checkov-report.txt 2>&1 || exit 0
                     '''
-                    // Affichage brut dans Jenkins (caracteres mal encodes intentionnellement)
-                    bat 'type checkov-report\\checkov-report.txt || exit 0'
-
-                    // Lecture propre UTF-8 uniquement pour le dashboard
                     def content = powershell(encoding: 'UTF-8', returnStdout: true, script: '''
                         [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
                         $content = Get-Content -Path "checkov-report/checkov-report.txt" -Encoding UTF8 -Raw
                         Write-Output $content
-                    ''').trim().replaceAll(/\x1B\[[0-9;]*m/, '').replaceAll(/\[\d+m/, '')
-                    // Regex corrigee pour extraire le vrai nombre de Failed checks
-                    def matcher = content =~ /Failed checks:\s*(\d+)/
-                    def failedCount = matcher.find() ? matcher.group(1).toInteger() : 0
-                    def status = failedCount > 0 ? 'warning' : 'success'
+                    ''').trim()
+                    def status = content.contains('Failed checks') && !content.contains('Failed checks: 0') ? 'warning' : 'success'
                     sendToDashboard("Checkov", content, status)
                     if (status == 'warning') {
                         error("Checkov a detecte des problemes IaC — pipeline bloque !")
